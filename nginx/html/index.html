@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>my-flask-app · nginx demo</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f172a;
+      --panel: #1a2537;
+      --panel-2: #111c2e;
+      --border: #2b3a52;
+      --text: #e7eefb;
+      --muted: #8fa3bf;
+      --accent: #4f9cf9;
+      --accent-2: #22c55e;
+      --danger: #f87171;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 32px 16px 56px;
+      background: radial-gradient(1200px 600px at 10% -10%, #1d3357 0%, transparent 60%), var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .wrap { max-width: 980px; margin: 0 auto; }
+
+    header { margin-bottom: 28px; }
+    h1 { margin: 0 0 6px; font-size: 26px; letter-spacing: -0.02em; }
+    .sub { color: var(--muted); font-size: 14px; }
+    .badge {
+      display: inline-block;
+      margin-left: 8px;
+      padding: 2px 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 11px;
+      color: var(--accent);
+      vertical-align: 3px;
+    }
+
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+
+    .card {
+      background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .card h2 {
+      margin: 0 0 4px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .card p.hint { margin: 0 0 14px; color: var(--muted); font-size: 12.5px; }
+
+    code, .path {
+      font-family: var(--mono);
+      font-size: 12.5px;
+    }
+
+    .path {
+      display: block;
+      margin: 0 0 14px;
+      padding: 8px 10px;
+      background: #0b1424;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: #9ecbff;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    .row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 9px 11px;
+      background: #0b1424;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: var(--mono);
+      font-size: 13px;
+      outline: none;
+    }
+
+    input[type="text"]:focus { border-color: var(--accent); }
+
+    .field { flex: 1 1 90px; min-width: 0; }
+
+    button {
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: #22314a;
+      color: var(--text);
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      transition: background 0.15s, border-color 0.15s, transform 0.05s;
+    }
+
+    button:hover { background: #2b3d5c; border-color: #3d5377; }
+    button:active { transform: translateY(1px); }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #07111f; }
+    button.primary:hover { background: #6aabfa; }
+    button.green { background: #1e7a48; border-color: #269459; }
+    button.green:hover { background: #248b53; }
+
+    .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+
+    .console {
+      margin-top: 22px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #0a1220;
+    }
+
+    .console-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 14px;
+      background: #132033;
+      border-bottom: 1px solid var(--border);
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+
+    .console-head strong { color: var(--text); font-weight: 600; }
+
+    #meta { font-family: var(--mono); font-size: 11.5px; }
+
+    pre {
+      margin: 0;
+      padding: 16px;
+      min-height: 200px;
+      max-height: 420px;
+      overflow: auto;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: #cfe3ff;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .status-ok { color: var(--accent-2); }
+    .status-err { color: var(--danger); }
+
+    footer { margin-top: 26px; color: var(--muted); font-size: 12px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>my-flask-app <span class="badge">via nginx</span></h1>
+      <div class="sub">Демонстрация эндпоинтов Flask-приложения. nginx проксирует <code>/api/*</code> → <code>flask-app:5000</code>.</div>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Умножение</h2>
+        <p class="hint">GET-запрос к /multiply/&lt;a&gt;/&lt;b&gt;</p>
+        <code class="path" id="path-mul">/api/multiply/6/7</code>
+        <div class="row">
+          <div class="field">
+            <label for="a">a</label>
+            <input id="a" type="text" value="6" inputmode="decimal">
+          </div>
+          <div class="field">
+            <label for="b">b</label>
+            <input id="b" type="text" value="7" inputmode="decimal">
+          </div>
+        </div>
+        <div class="actions">
+          <button class="primary" onclick="callMath('multiply')">Умножить</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Деление</h2>
+        <p class="hint">GET-запрос к /divide/&lt;a&gt;/&lt;b&gt;</p>
+        <code class="path" id="path-div">/api/divide/6/7</code>
+        <div class="row">
+          <div class="field">
+            <label for="c">a</label>
+            <input id="c" type="text" value="6" inputmode="decimal">
+          </div>
+          <div class="field">
+            <label for="d">b</label>
+            <input id="d" type="text" value="7" inputmode="decimal">
+          </div>
+        </div>
+        <div class="actions">
+          <button class="primary" onclick="callMath('divide')">Разделить</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Служебные эндпоинты</h2>
+        <p class="hint">Проверка состояния и сведения о контейнере</p>
+        <code class="path">/api/health &nbsp;·&nbsp; /api/info &nbsp;·&nbsp; /api/</code>
+        <div class="actions">
+          <button class="green" onclick="call('/api/health')">Health</button>
+          <button onclick="call('/api/info')">Info</button>
+          <button onclick="call('/api/')">Index</button>
+        </div>
+      </section>
+    </div>
+
+    <section class="console">
+      <div class="console-head">
+        <span><strong>Ответ</strong> <span id="status" class="status-ok">—</span></span>
+        <span id="meta"></span>
+      </div>
+      <pre id="out">Нажмите кнопку, чтобы выполнить запрос…</pre>
+    </section>
+
+    <footer>Docker Compose demo · Flask + nginx</footer>
+  </div>
+
+  <script>
+    const out = document.getElementById('out');
+    const statusEl = document.getElementById('status');
+    const metaEl = document.getElementById('meta');
+
+    document.getElementById('a').addEventListener('input', () => {
+      document.getElementById('path-mul').textContent =
+        `/api/multiply/${encodeURIComponent(document.getElementById('a').value || '?')}/${encodeURIComponent(document.getElementById('b').value || '?')}`;
+    });
+    document.getElementById('b').addEventListener('input', () => {
+      document.getElementById('path-mul').textContent =
+        `/api/multiply/${encodeURIComponent(document.getElementById('a').value || '?')}/${encodeURIComponent(document.getElementById('b').value || '?')}`;
+    });
+    document.getElementById('c').addEventListener('input', () => {
+      document.getElementById('path-div').textContent =
+        `/api/divide/${encodeURIComponent(document.getElementById('c').value || '?')}/${encodeURIComponent(document.getElementById('d').value || '?')}`;
+    });
+    document.getElementById('d').addEventListener('input', () => {
+      document.getElementById('path-div').textContent =
+        `/api/divide/${encodeURIComponent(document.getElementById('c').value || '?')}/${encodeURIComponent(document.getElementById('d').value || '?')}`;
+    });
+
+    function callMath(op) {
+      const a = document.getElementById(op === 'multiply' ? 'a' : 'c').value.trim() || '0';
+      const b = document.getElementById(op === 'multiply' ? 'b' : 'd').value.trim() || '0';
+      call(`/api/${op}/${encodeURIComponent(a)}/${encodeURIComponent(b)}`);
+    }
+
+    async function call(url) {
+      const started = performance.now();
+      out.textContent = `GET ${url}\n\n…`;
+      statusEl.textContent = '—';
+      statusEl.className = 'status-ok';
+      metaEl.textContent = '';
+
+      try {
+        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        const elapsed = Math.round(performance.now() - started);
+        const text = await res.text();
+        let pretty = text;
+        try { pretty = JSON.stringify(JSON.parse(text), null, 2); } catch (_) {}
+
+        out.textContent = `GET ${url}\nHTTP ${res.status} ${res.statusText}\n\n${pretty}`;
+        statusEl.textContent = `HTTP ${res.status}`;
+        statusEl.className = res.ok ? 'status-ok' : 'status-err';
+        metaEl.textContent = `${elapsed} ms`;
+      } catch (err) {
+        const elapsed = Math.round(performance.now() - started);
+        out.textContent = `GET ${url}\n\nОшибка сети: ${err.message}`;
+        statusEl.textContent = 'network error';
+        statusEl.className = 'status-err';
+        metaEl.textContent = `${elapsed} ms`;
+      }
+    }
+
+    call('/api/health');
+  </script>
+</body>
+</html>
